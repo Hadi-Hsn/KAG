@@ -1,0 +1,31 @@
+# Core web framework and server
+fastapi
+uvicorn[standard]
+
+# Database and embeddings
+chromadb
+
+# AI/ML
+openai
+
+# Environment and configuration
+python-dotenv
+
+# PDF processing
+PyPDF2
+PyMuPDF
+
+# File upload support
+python-multipart
+
+# Async processing
+asyncio
+
+# Data validation
+pydantic
+
+# WebSocket support
+websockets
+
+# HTTP client for notifications
+httpx

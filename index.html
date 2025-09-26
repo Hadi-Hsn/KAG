@@ -1,0 +1,3113 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>KAG - Knowledge Assisted Generation</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+      /* ===== CSS VARIABLES ===== */
+      :root {
+        --primary-color: #2563eb;
+        --primary-hover: #1d4ed8;
+        --secondary-color: #f8fafc;
+        --success-color: #10b981;
+        --error-color: #ef4444;
+        --warning-color: #f59e0b;
+        --dark-color: #1e293b;
+        --light-gray: #64748b;
+        --border-color: #e2e8f0;
+        --border-radius: 12px;
+        --border-radius-lg: 16px;
+        --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+          0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+          0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
+          0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        --transition-fast: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      /* ===== GLOBAL STYLES ===== */
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
+          Roboto, "Helvetica Neue", Arial, sans-serif;
+        margin: 0;
+        padding: 20px;
+        color: var(--dark-color);
+        min-height: 100vh;
+        line-height: 1.6;
+      }
+
+      .container {
+        max-width: 1400px;
+        margin: 0 auto;
+        background: white;
+        border-radius: var(--border-radius-lg);
+        box-shadow: var(--shadow-xl);
+        overflow: hidden;
+      }
+
+      /* ===== HEADER ===== */
+      .header {
+        background: linear-gradient(135deg, var(--primary-color), #1e40af);
+        color: white;
+        padding: 48px 40px;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .header::before {
+        content: "";
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: linear-gradient(
+          45deg,
+          transparent,
+          rgba(255, 255, 255, 0.1),
+          transparent
+        );
+        transform: rotate(45deg);
+        animation: headerShine 3s infinite;
+      }
+
+      @keyframes headerShine {
+        0% {
+          transform: translateX(-100%) translateY(-100%) rotate(45deg);
+        }
+        50% {
+          transform: translateX(100%) translateY(100%) rotate(45deg);
+        }
+        100% {
+          transform: translateX(200%) translateY(200%) rotate(45deg);
+        }
+      }
+
+      .header h1 {
+        margin: 0 0 16px 0;
+        font-size: 3rem;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        position: relative;
+        z-index: 1;
+      }
+
+      .header p {
+        margin: 0;
+        font-size: 1.25rem;
+        opacity: 0.9;
+        font-weight: 400;
+        position: relative;
+        z-index: 1;
+      }
+
+      /* ===== MAIN CONTENT ===== */
+      .main-content {
+        padding: 40px;
+      }
+
+      .section {
+        background: white;
+        border-radius: var(--border-radius);
+        padding: 32px;
+        margin-bottom: 32px;
+        border: 1px solid var(--border-color);
+        box-shadow: var(--shadow-sm);
+        transition: var(--transition);
+      }
+
+      .section:hover {
+        box-shadow: var(--shadow-md);
+      }
+
+      .section h2 {
+        margin: 0 0 24px 0;
+        font-size: 1.875rem;
+        font-weight: 600;
+        color: var(--dark-color);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      /* ===== FORM STYLES ===== */
+      .form-group {
+        margin-bottom: 24px;
+      }
+
+      .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: var(--dark-color);
+        font-size: 0.875rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+
+      /* ===== FILE INPUT ===== */
+      .file-input-wrapper {
+        position: relative;
+        border: 3px dashed var(--border-color);
+        border-radius: var(--border-radius-lg);
+        padding: 48px 32px;
+        text-align: center;
+        transition: var(--transition);
+        cursor: pointer;
+        background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+        min-height: 200px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .file-input-wrapper:hover {
+        border-color: var(--primary-color);
+        background: linear-gradient(135deg, #dbeafe 0%, #eff6ff 100%);
+        transform: scale(1.02);
+        box-shadow: var(--shadow-lg);
+      }
+
+      .file-input-wrapper.dragover {
+        border-color: var(--primary-color);
+        background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+        transform: scale(1.05);
+        box-shadow: var(--shadow-xl);
+        border-style: solid;
+      }
+
+      .file-input-wrapper input[type="file"] {
+        position: absolute;
+        opacity: 0;
+        width: 100%;
+        height: 100%;
+        cursor: pointer;
+      }
+
+      .file-input-content {
+        pointer-events: none;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
+      }
+
+      .file-input-icon {
+        font-size: 4rem;
+        margin-bottom: 8px;
+        filter: drop-shadow(0 2px 4px rgba(37, 99, 235, 0.3));
+      }
+
+      .file-input-wrapper strong {
+        color: var(--primary-color);
+        font-size: 1.25rem;
+        font-weight: 600;
+      }
+
+      .file-input-wrapper small {
+        color: var(--light-gray);
+        display: block;
+        margin-top: 12px;
+        font-size: 0.95rem;
+        background: rgba(255, 255, 255, 0.8);
+        padding: 8px 16px;
+        border-radius: 20px;
+        backdrop-filter: blur(10px);
+      }
+
+      /* ===== SELECTED FILES ===== */
+      .selected-files {
+        margin-top: 20px;
+      }
+
+      .selected-files h4 {
+        margin: 0 0 16px 0;
+        color: var(--dark-color);
+        font-size: 1rem;
+        font-weight: 600;
+      }
+
+      .file-item-preview {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px;
+        background: white;
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius);
+        margin: 8px 0;
+        transition: var(--transition);
+      }
+
+      .file-item-preview:hover {
+        box-shadow: var(--shadow-sm);
+        border-color: var(--primary-color);
+      }
+
+      .file-preview-info {
+        flex: 1;
+      }
+
+      .file-preview-name {
+        font-weight: 600;
+        color: var(--dark-color);
+        margin-bottom: 4px;
+      }
+
+      .file-preview-details {
+        font-size: 0.875rem;
+        color: var(--light-gray);
+      }
+
+      .file-remove-btn {
+        background: var(--error-color);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 32px;
+        height: 32px;
+        cursor: pointer;
+        font-weight: bold;
+        transition: var(--transition);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .file-remove-btn:hover {
+        background: #dc2626;
+        transform: scale(1.1);
+      }
+
+      /* ===== BUTTONS ===== */
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        padding: 14px 28px;
+        border: none;
+        border-radius: var(--border-radius);
+        font-weight: 600;
+        font-size: 16px;
+        cursor: pointer;
+        transition: var(--transition);
+        text-decoration: none;
+        text-transform: none;
+        letter-spacing: 0.01em;
+        min-width: 160px;
+      }
+
+      .btn-primary {
+        background: linear-gradient(
+          135deg,
+          var(--primary-color),
+          var(--primary-hover)
+        );
+        color: white;
+        box-shadow: var(--shadow-md);
+      }
+
+      .btn-primary:hover {
+        background: linear-gradient(135deg, var(--primary-hover), #1e40af);
+        box-shadow: var(--shadow-lg);
+        transform: translateY(-2px);
+      }
+
+      .btn-primary:disabled {
+        background: linear-gradient(135deg, #9ca3af, #6b7280);
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: var(--shadow-sm);
+      }
+
+      .btn-secondary {
+        background: linear-gradient(135deg, var(--secondary-color), #e2e8f0);
+        color: var(--dark-color);
+        border: 1px solid var(--border-color);
+        box-shadow: var(--shadow-sm);
+      }
+
+      .btn-secondary:hover {
+        background: linear-gradient(135deg, #e2e8f0, #cbd5e1);
+        border-color: var(--primary-color);
+        transform: translateY(-1px);
+      }
+
+      .btn-success {
+        background: linear-gradient(135deg, var(--success-color), #059669);
+        color: white;
+        box-shadow: var(--shadow-md);
+      }
+
+      .btn-success:hover {
+        background: linear-gradient(135deg, #059669, #047857);
+        transform: translateY(-2px);
+      }
+
+      .btn-danger {
+        background: linear-gradient(135deg, var(--error-color), #dc2626);
+        color: white;
+        box-shadow: var(--shadow-md);
+      }
+
+      .btn-danger:hover {
+        background: linear-gradient(135deg, #dc2626, #b91c1c);
+        transform: translateY(-2px);
+      }
+
+      /* ===== MULTISELECT ===== */
+      .multiselect {
+        position: relative;
+        width: 100%;
+      }
+
+      .multiselect-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 14px 18px;
+        border: 2px solid var(--border-color);
+        border-radius: var(--border-radius);
+        background: white;
+        cursor: pointer;
+        transition: var(--transition);
+        min-height: 52px;
+        background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+      }
+
+      .multiselect-header:hover {
+        border-color: var(--primary-color);
+        box-shadow: var(--shadow-md);
+        transform: translateY(-1px);
+      }
+
+      .multiselect-header.active {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+        background: white;
+      }
+
+      .multiselect-selected-text {
+        flex: 1;
+        color: var(--dark-color);
+        font-weight: 500;
+        font-size: 0.95rem;
+      }
+
+      .multiselect-arrow {
+        color: var(--primary-color);
+        transition: var(--transition);
+        font-size: 1.2rem;
+        font-weight: bold;
+      }
+
+      .multiselect-header.active .multiselect-arrow {
+        transform: rotate(180deg);
+        color: var(--primary-hover);
+      }
+
+      .multiselect-dropdown {
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: white;
+        border: 2px solid var(--primary-color);
+        border-top: none;
+        border-radius: 0 0 var(--border-radius) var(--border-radius);
+        box-shadow: var(--shadow-lg);
+        max-height: 320px;
+        overflow-y: auto;
+        z-index: 1000;
+        backdrop-filter: blur(10px);
+      }
+
+      .multiselect-option {
+        display: flex;
+        align-items: center;
+        padding: 14px 18px;
+        cursor: pointer;
+        transition: var(--transition);
+        border-bottom: 1px solid var(--border-color);
+        background: white;
+      }
+
+      .multiselect-option:last-child {
+        border-bottom: none;
+      }
+
+      .multiselect-option:hover {
+        background: linear-gradient(
+          135deg,
+          var(--secondary-color) 0%,
+          #e2e8f0 100%
+        );
+        transform: translateX(4px);
+      }
+
+      .multiselect-option input[type="checkbox"] {
+        margin-right: 12px;
+        width: 18px;
+        height: 18px;
+        accent-color: var(--primary-color);
+        cursor: pointer;
+      }
+
+      .multiselect-option label {
+        flex: 1;
+        cursor: pointer;
+        margin: 0;
+        font-weight: 500;
+        color: var(--dark-color);
+        font-size: 0.95rem;
+      }
+
+      .multiselect-option.select-all {
+        background: linear-gradient(
+          135deg,
+          var(--primary-color) 0%,
+          var(--primary-hover) 100%
+        );
+        color: white;
+        font-weight: 600;
+        border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+      }
+
+      .multiselect-option.select-all:hover {
+        background: linear-gradient(
+          135deg,
+          var(--primary-hover) 0%,
+          #1e40af 100%
+        );
+        transform: translateX(0);
+      }
+
+      .multiselect-option.select-all label {
+        color: white;
+      }
+
+      /* ===== PROGRESS ===== */
+      .progress-container {
+        display: none;
+        background: var(--secondary-color);
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius);
+        padding: 24px;
+        margin-top: 24px;
+        animation: slideDown 0.3s ease-out;
+      }
+
+      @keyframes slideDown {
+        from {
+          opacity: 0;
+          transform: translateY(-20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .progress-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+        gap: 16px;
+      }
+
+      .progress-title {
+        margin: 0;
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--dark-color);
+      }
+
+      .progress-stats {
+        font-size: 0.875rem;
+        color: var(--light-gray);
+        font-weight: 500;
+      }
+
+      .progress-bar {
+        height: 8px;
+        background: var(--border-color);
+        border-radius: 4px;
+        overflow: hidden;
+        margin-bottom: 16px;
+      }
+
+      .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, var(--primary-color), #3b82f6);
+        width: 0%;
+        transition: width 0.3s ease;
+        position: relative;
+      }
+
+      .progress-fill::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        right: 0;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          rgba(255, 255, 255, 0.4),
+          transparent
+        );
+        animation: shimmer 2s infinite;
+      }
+
+      @keyframes shimmer {
+        0% {
+          transform: translateX(-100%);
+        }
+        100% {
+          transform: translateX(100%);
+        }
+      }
+
+      .progress-text {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 16px;
+      }
+
+      .progress-status {
+        font-weight: 500;
+        color: var(--dark-color);
+      }
+
+      .progress-time {
+        font-size: 0.875rem;
+        color: var(--light-gray);
+        font-weight: 500;
+      }
+
+      /* ===== FILE LIST ===== */
+      .file-list {
+        margin-top: 24px;
+        background: white;
+        border-radius: var(--border-radius);
+        border: 1px solid var(--border-color);
+        overflow: hidden;
+      }
+
+      .file-list-header {
+        font-weight: 600;
+        padding: 16px 20px;
+        background: var(--secondary-color);
+        color: var(--dark-color);
+        border-bottom: 1px solid var(--border-color);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .file-item {
+        border-bottom: 1px solid var(--border-color);
+        transition: var(--transition);
+      }
+
+      .file-item:last-child {
+        border-bottom: none;
+      }
+
+      .file-item-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px 20px;
+        gap: 16px;
+      }
+
+      .file-name {
+        font-weight: 600;
+        color: var(--dark-color);
+        flex: 1;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .file-details {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+      }
+
+      .file-size {
+        font-size: 0.875rem;
+        color: var(--light-gray);
+        font-weight: 500;
+      }
+
+      .file-status {
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+
+      .file-status.pending {
+        background: #f3f4f6;
+        color: var(--light-gray);
+      }
+
+      .file-status.processing {
+        background: #dbeafe;
+        color: var(--primary-color);
+      }
+
+      .file-status.completed {
+        background: #d1fae5;
+        color: var(--success-color);
+      }
+
+      .file-status.failed {
+        background: #fee2e2;
+        color: var(--error-color);
+      }
+
+      .file-item-progress {
+        height: 4px;
+        background: var(--border-color);
+        position: relative;
+      }
+
+      .file-progress-fill {
+        height: 100%;
+        width: 0%;
+        transition: width 0.3s ease;
+      }
+
+      .file-item.processing .file-progress-fill {
+        background: linear-gradient(90deg, var(--primary-color), #3b82f6);
+      }
+
+      .file-item.completed .file-progress-fill {
+        background: var(--success-color);
+        width: 100% !important;
+      }
+
+      .file-item.failed .file-progress-fill {
+        background: var(--error-color);
+      }
+
+      .file-item-details {
+        padding: 12px 20px;
+        background: var(--secondary-color);
+        border-top: 1px solid var(--border-color);
+        font-size: 0.875rem;
+        color: var(--light-gray);
+      }
+
+      .processing-step {
+        color: var(--primary-color);
+        font-weight: 500;
+      }
+
+      /* ===== TEXTAREA ===== */
+      textarea {
+        width: 100%;
+        padding: 12px 16px;
+        border: 2px solid var(--border-color);
+        border-radius: var(--border-radius);
+        font-family: inherit;
+        font-size: 1rem;
+        resize: vertical;
+        transition: var(--transition);
+      }
+
+      textarea:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+      }
+
+      /* ===== ANSWER SECTION ===== */
+      .answer-section {
+        background: white;
+        border-radius: var(--border-radius);
+        padding: 32px;
+        margin-bottom: 32px;
+        border: 1px solid var(--border-color);
+        box-shadow: var(--shadow-sm);
+      }
+
+      .answer-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--primary-color);
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .answer-text {
+        line-height: 1.8;
+        color: var(--dark-color);
+      }
+
+      .answer-text h1,
+      .answer-text h2,
+      .answer-text h3 {
+        color: var(--dark-color);
+        margin-top: 24px;
+        margin-bottom: 16px;
+      }
+
+      .answer-text p {
+        margin-bottom: 16px;
+      }
+
+      .answer-text ul,
+      .answer-text ol {
+        margin-bottom: 16px;
+        padding-left: 24px;
+      }
+
+      .answer-text code {
+        background: var(--secondary-color);
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 0.9em;
+      }
+
+      .answer-text pre {
+        background: var(--secondary-color);
+        padding: 16px;
+        border-radius: var(--border-radius);
+        overflow-x: auto;
+      }
+
+      /* ===== REFERENCES ===== */
+      .references-section {
+        margin-top: 32px;
+      }
+
+      .references-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--dark-color);
+        margin-bottom: 20px;
+        padding-bottom: 8px;
+        border-bottom: 2px solid var(--primary-color);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .reference-item {
+        background: white;
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius);
+        padding: 24px;
+        margin-bottom: 16px;
+        cursor: pointer;
+        transition: var(--transition);
+        box-shadow: var(--shadow-sm);
+      }
+
+      .reference-item:hover {
+        border-color: var(--primary-color);
+        box-shadow: var(--shadow-md);
+        transform: translateY(-2px);
+      }
+
+      .reference-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 16px;
+        flex-wrap: wrap;
+        gap: 12px;
+      }
+
+      .reference-source {
+        font-weight: 600;
+        color: var(--primary-color);
+        flex: 1;
+        min-width: 200px;
+      }
+
+      .reference-badges {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .badge {
+        padding: 6px 12px;
+        border-radius: 16px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+
+      .badge-score {
+        background: #e5e7eb;
+        color: #374151;
+      }
+
+      .badge-page {
+        background: #dbeafe;
+        color: var(--primary-color);
+      }
+
+      .reference-text {
+        color: var(--light-gray);
+        line-height: 1.7;
+        font-size: 0.95rem;
+      }
+
+      /* ===== BOOKS SECTION ===== */
+      .books-section {
+        margin-top: 40px;
+      }
+
+      .books-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+        gap: 28px;
+        margin: 28px 0;
+      }
+
+      .book-card {
+        background: white;
+        border-radius: var(--border-radius-lg);
+        box-shadow: var(--shadow-md);
+        padding: 28px;
+        border: 1px solid var(--border-color);
+        cursor: pointer;
+        transition: var(--transition);
+        position: relative;
+        overflow: hidden;
+        background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
+      }
+
+      .book-card:hover {
+        box-shadow: var(--shadow-xl);
+        transform: translateY(-6px);
+        border-color: var(--primary-color);
+      }
+
+      .book-card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 5px;
+        background: linear-gradient(
+          90deg,
+          var(--primary-color),
+          #3b82f6,
+          #8b5cf6
+        );
+        box-shadow: 0 2px 4px rgba(37, 99, 235, 0.3);
+      }
+
+      .book-card::after {
+        content: "📄";
+        position: absolute;
+        top: 24px;
+        left: 24px;
+        font-size: 2.5rem;
+        opacity: 0.1;
+        z-index: 0;
+      }
+
+      .book-title {
+        font-weight: 600;
+        color: var(--dark-color);
+        margin-bottom: 16px;
+        padding-right: 50px;
+        font-size: 1.15rem;
+        line-height: 1.5;
+        position: relative;
+        z-index: 1;
+      }
+
+      .book-metadata {
+        display: flex;
+        gap: 16px;
+        margin-top: 20px;
+        flex-wrap: wrap;
+        position: relative;
+        z-index: 1;
+      }
+
+      .book-size,
+      .book-pages {
+        background: linear-gradient(
+          135deg,
+          var(--secondary-color) 0%,
+          #e2e8f0 100%
+        );
+        color: var(--dark-color);
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        border: 1px solid var(--border-color);
+      }
+
+      .delete-btn {
+        position: absolute;
+        top: 24px;
+        right: 24px;
+        background: linear-gradient(135deg, var(--error-color), #dc2626);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        font-size: 18px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: var(--transition);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transform: scale(0.8);
+        z-index: 10;
+        box-shadow: var(--shadow-md);
+      }
+
+      .delete-btn:hover {
+        background: linear-gradient(135deg, #dc2626, #b91c1c);
+        transform: scale(1.15);
+        box-shadow: var(--shadow-lg);
+      }
+
+      .book-card:hover .delete-btn {
+        opacity: 1;
+        transform: scale(1);
+      }
+
+      /* ===== PDF VIEWER ===== */
+      .pdf-viewer-section {
+        margin-top: 32px;
+        background: white;
+        border-radius: var(--border-radius);
+        padding: 24px;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--border-color);
+      }
+
+      .pdf-viewer-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+        gap: 16px;
+      }
+
+      .pdf-viewer-controls {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+
+      .pdf-viewer-controls input {
+        width: 80px;
+        padding: 8px 12px;
+        border: 2px solid var(--border-color);
+        border-radius: var(--border-radius);
+        text-align: center;
+      }
+
+      .pdf-viewer {
+        width: 100%;
+        height: 70vh;
+        border: 2px solid var(--border-color);
+        border-radius: var(--border-radius);
+        background: white;
+      }
+
+      /* ===== NOTIFICATIONS ===== */
+      .notification-container {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 10000;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        pointer-events: none;
+      }
+
+      .notification {
+        padding: 16px 24px;
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow-lg);
+        font-weight: 600;
+        color: white;
+        transform: translateX(100%);
+        transition: all 0.3s ease;
+        max-width: 400px;
+        pointer-events: auto;
+        opacity: 0;
+      }
+
+      .notification.show {
+        transform: translateX(0);
+        opacity: 1;
+      }
+
+      .notification.success {
+        background: var(--success-color);
+      }
+
+      .notification.error {
+        background: var(--error-color);
+      }
+
+      .notification.warning {
+        background: var(--warning-color);
+      }
+
+      .notification.info {
+        background: var(--primary-color);
+      }
+
+      /* ===== UTILITY CLASSES ===== */
+      .loading {
+        text-align: center;
+        padding: 40px 20px;
+        color: var(--light-gray);
+        font-style: italic;
+      }
+
+      .no-results {
+        text-align: center;
+        padding: 40px 20px;
+        color: var(--light-gray);
+        font-style: italic;
+      }
+
+      .fade-in {
+        animation: fadeIn 0.5s ease-out;
+      }
+
+      .pulse {
+        animation: pulse 2s infinite;
+      }
+
+      /* ===== ANIMATIONS ===== */
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.7;
+        }
+      }
+
+      /* ===== RESPONSIVE DESIGN ===== */
+      @media (max-width: 768px) {
+        body {
+          padding: 10px;
+        }
+
+        .header {
+          padding: 32px 24px;
+        }
+
+        .header h1 {
+          font-size: 2.5rem;
+        }
+
+        .main-content {
+          padding: 24px;
+        }
+
+        .section {
+          padding: 24px;
+          margin-bottom: 24px;
+        }
+
+        .file-input-wrapper {
+          padding: 32px 16px;
+        }
+
+        .books-grid {
+          grid-template-columns: 1fr;
+          gap: 16px;
+        }
+
+        .reference-header {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+
+        .pdf-viewer-header {
+          flex-direction: column;
+          align-items: stretch;
+        }
+
+        .pdf-viewer-controls {
+          justify-content: center;
+        }
+
+        .pdf-viewer {
+          height: 60vh;
+        }
+
+        .btn {
+          width: 100%;
+          justify-content: center;
+        }
+
+        .multiselect-dropdown {
+          max-height: 200px;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .header h1 {
+          font-size: 2rem;
+        }
+
+        .header p {
+          font-size: 1rem;
+        }
+
+        .file-input-icon {
+          font-size: 2rem;
+        }
+
+        .file-input-wrapper {
+          padding: 24px 12px;
+        }
+
+        .book-card {
+          padding: 20px;
+        }
+
+        .reference-item {
+          padding: 20px;
+        }
+
+        .section h2 {
+          font-size: 1.5rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>📚 KAG</h1>
+        <p>Knowledge-Augmented Generation</p>
+      </div>
+
+      <div class="main-content">
+        <!-- Upload Section -->
+        <div class="section">
+          <h2>📁 Upload Documents</h2>
+          <form id="uploadForm">
+            <div class="form-group">
+              <label>Upload Files</label>
+              <div class="file-input-wrapper" id="fileInputWrapper">
+                <input
+                  type="file"
+                  name="files"
+                  id="fileInput"
+                  accept=".pdf,.zip"
+                  multiple
+                  required
+                />
+                <div class="file-input-content">
+                  <div class="file-input-icon">📄</div>
+                  <div>
+                    <strong>Drop files here or click to browse</strong><br />
+                    <small
+                      >Supports PDF files and ZIP archives containing
+                      PDFs</small
+                    >
+                  </div>
+                </div>
+              </div>
+              <div id="selectedFiles" style="margin-top: 12px"></div>
+            </div>
+
+            <button type="submit" class="btn btn-primary" id="uploadBtn">
+              📤 Upload & Process Files
+            </button>
+          </form>
+
+          <!-- Progress Section -->
+          <div class="progress-container" id="progressContainer">
+            <div class="progress-header">
+              <h4 class="progress-title" id="progressTitle">
+                Processing Files...
+              </h4>
+              <div style="display: flex; align-items: center; gap: 16px">
+                <div class="progress-stats" id="progressStats"></div>
+                <button
+                  type="button"
+                  class="btn btn-danger"
+                  id="abortBtn"
+                  style="
+                    display: none;
+                    font-size: 0.875rem;
+                    padding: 6px 12px;
+                    background: #dc3545;
+                    border: 1px solid #dc3545;
+                  "
+                  title="Abort all processing tasks"
+                >
+                  🛑 Abort All Tasks
+                </button>
+              </div>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="progress-text">
+              <div class="progress-status" id="progressStatus">
+                Initializing...
+              </div>
+              <div class="progress-time" id="progressTime"></div>
+              <div
+                class="tab-status"
+                id="tabStatus"
+                style="
+                  display: none;
+                  margin-top: 8px;
+                  padding: 8px;
+                  background: #e8f5e8;
+                  border-radius: 4px;
+                  font-size: 0.875rem;
+                  color: #2d5a2d;
+                "
+              >
+                ✅ Safe to close tab - processing continues in background
+              </div>
+            </div>
+            <div class="file-list" id="fileList" style="display: none">
+              <div
+                style="
+                  font-weight: 600;
+                  margin-bottom: 10px;
+                  color: var(--dark-color);
+                  padding: 12px 20px 5px 20px;
+                "
+              >
+                📁 File Processing Status
+              </div>
+              <div id="fileItems"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Query Section -->
+        <div class="section">
+          <h2>🔍 Ask a Question</h2>
+
+          <!-- File Filter -->
+          <div class="form-group file-filter">
+            <label>Filter by Documents (optional)</label>
+            <div class="multiselect" id="fileFilter">
+              <div class="multiselect-header" id="multiselectHeader">
+                <span id="selectedFilesText">All documents selected</span>
+                <span>▼</span>
+              </div>
+              <div class="multiselect-dropdown" id="multiselectDropdown">
+                <!-- Options will be populated dynamically -->
+              </div>
+            </div>
+          </div>
+
+          <form id="queryForm">
+            <div class="form-group">
+              <label>Your Question</label>
+              <textarea
+                id="questionInput"
+                rows="3"
+                placeholder="e.g. What are the different types of vaccines and their mechanisms?"
+                required
+              ></textarea>
+            </div>
+
+            <button type="submit" class="btn btn-primary" id="queryBtn">
+              🔍 Search & Get Answer
+            </button>
+          </form>
+        </div>
+
+        <!-- Answer Section -->
+        <div id="answerSection" style="display: none" class="fade-in">
+          <div class="answer-section">
+            <div class="answer-title">📝 Answer</div>
+            <div class="answer-text" id="answerText"></div>
+          </div>
+
+          <!-- References Section -->
+          <div class="references-section">
+            <div class="references-title">📋 Top References</div>
+            <div id="referencesContainer"></div>
+          </div>
+        </div>
+
+        <!-- Books Section -->
+        <div class="books-section">
+          <div
+            style="
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+              margin-bottom: 20px;
+            "
+          >
+            <div class="references-title">📚 Uploaded Documents</div>
+            <button
+              class="btn btn-danger"
+              onclick="resetDatabase()"
+              style="padding: 8px 16px; font-size: 0.9rem"
+              title="Reset entire database and delete all documents"
+            >
+              🗑️ Reset Database
+            </button>
+          </div>
+          <div class="books-grid" id="booksList">
+            <div class="loading">Loading documents...</div>
+          </div>
+        </div>
+
+        <!-- PDF Viewer Section -->
+        <div
+          id="pdfViewerSection"
+          class="pdf-viewer-section"
+          style="display: none"
+        >
+          <div class="pdf-viewer-header">
+            <h3 style="margin: 0">📖 Document Viewer</h3>
+            <div class="pdf-viewer-controls">
+              <input
+                type="number"
+                id="pageInput"
+                placeholder="Page"
+                style="width: 80px; padding: 8px"
+                min="1"
+              />
+              <button class="btn btn-secondary" onclick="jumpToPage()">
+                Go
+              </button>
+              <button class="btn btn-danger" onclick="closePDFViewer()">
+                Close
+              </button>
+            </div>
+          </div>
+          <iframe id="pdfViewer" class="pdf-viewer"></iframe>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // ===== API CONFIGURATION =====
+      // Get the base URL dynamically from the current window location
+      const getApiBaseUrl = () => {
+        const protocol = window.location.protocol;
+        const hostname = window.location.hostname;
+        const port = window.location.port ? `:${window.location.port}` : "";
+        return `${protocol}//${hostname}${port}`;
+      };
+
+      const getWebSocketUrl = () => {
+        const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+        const hostname = window.location.hostname;
+        const port = window.location.port ? `:${window.location.port}` : "";
+        return `${protocol}//${hostname}${port}`;
+      };
+
+      const API_BASE_URL = getApiBaseUrl();
+      const WS_BASE_URL = getWebSocketUrl();
+
+      // ===== GLOBAL VARIABLES =====
+      let currentPdfUrl = null;
+      let currentPageNumber = null;
+      let availableFiles = [];
+      let selectedFiles = [];
+      let currentTaskId = null;
+      let uploadedFilesList = [];
+      let processingStartTime = null;
+      let progressCheckInterval = null;
+      let currentWebSocket = null;
+      let reconnectAttempts = 0;
+      let maxReconnectAttempts = 5;
+      let reconnectDelay = 1000;
+      let isPageLoaded = false;
+      let notificationContainer = null;
+      let processingStartedNotified = false; // Track if we've shown the "you can close tab" message
+
+      // ===== CONSTANTS =====
+      const STORAGE_KEYS = {
+        CURRENT_TASK: "kag_current_task_id",
+        TASK_HISTORY: "kag_task_history",
+        UPLOADED_FILES: "kag_uploaded_files",
+        LAST_ACTIVITY: "kag_last_activity",
+      };
+
+      // ===== DOM ELEMENTS =====
+      const uploadForm = document.getElementById("uploadForm");
+      const queryForm = document.getElementById("queryForm");
+      const answerSection = document.getElementById("answerSection");
+      const answerText = document.getElementById("answerText");
+      const referencesContainer = document.getElementById(
+        "referencesContainer"
+      );
+      const booksList = document.getElementById("booksList");
+      const pdfViewerSection = document.getElementById("pdfViewerSection");
+      const pdfViewer = document.getElementById("pdfViewer");
+      const fileInput = document.getElementById("fileInput");
+      const fileInputWrapper = document.getElementById("fileInputWrapper");
+      const selectedFilesDiv = document.getElementById("selectedFiles");
+      const progressContainer = document.getElementById("progressContainer");
+      const progressFill = document.getElementById("progressFill");
+      const progressStatus = document.getElementById("progressStatus");
+      const progressTitle = document.getElementById("progressTitle");
+      const progressStats = document.getElementById("progressStats");
+      const progressTime = document.getElementById("progressTime");
+      const fileList = document.getElementById("fileList");
+      const fileItems = document.getElementById("fileItems");
+      const abortBtn = document.getElementById("abortBtn");
+      const multiselectHeader = document.getElementById("multiselectHeader");
+      const multiselectDropdown = document.getElementById(
+        "multiselectDropdown"
+      );
+      const selectedFilesText = document.getElementById("selectedFilesText");
+
+      // ===== PERSISTENCE FUNCTIONS =====
+      function saveToLocalStorage(key, data) {
+        try {
+          localStorage.setItem(key, JSON.stringify(data));
+        } catch (error) {
+          console.error("Error saving to localStorage:", error);
+        }
+      }
+
+      function loadFromLocalStorage(key, defaultValue = null) {
+        try {
+          const data = localStorage.getItem(key);
+          return data ? JSON.parse(data) : defaultValue;
+        } catch (error) {
+          console.error("Error loading from localStorage:", error);
+          return defaultValue;
+        }
+      }
+
+      function clearTaskFromStorage() {
+        localStorage.removeItem(STORAGE_KEYS.CURRENT_TASK);
+        localStorage.removeItem(STORAGE_KEYS.UPLOADED_FILES);
+      }
+
+      function saveTaskState(taskId, uploadedFiles = null) {
+        saveToLocalStorage(STORAGE_KEYS.CURRENT_TASK, taskId);
+        saveToLocalStorage(STORAGE_KEYS.LAST_ACTIVITY, Date.now());
+
+        if (uploadedFiles) {
+          saveToLocalStorage(STORAGE_KEYS.UPLOADED_FILES, uploadedFiles);
+        }
+
+        let history = loadFromLocalStorage(STORAGE_KEYS.TASK_HISTORY, []);
+        const taskEntry = {
+          taskId,
+          timestamp: Date.now(),
+          files: uploadedFiles || uploadedFilesList,
+        };
+
+        history = history.filter((entry) => entry.taskId !== taskId);
+        history.unshift(taskEntry);
+        history = history.slice(0, 10);
+        saveToLocalStorage(STORAGE_KEYS.TASK_HISTORY, history);
+      }
+
+      // ===== WEBSOCKET FUNCTIONS =====
+      function connectWebSocket(taskId, isReconnect = false) {
+        // Close any existing WebSocket connection
+        if (currentWebSocket) {
+          currentWebSocket.close();
+          currentWebSocket = null;
+        }
+
+        // Reset reconnection attempts for new connection
+        if (!isReconnect) {
+          reconnectAttempts = 0;
+          reconnectDelay = 1000;
+          processingStartedNotified = false; // Reset notification flag for new connections
+        }
+
+        const wsUrl = `${WS_BASE_URL}/ws/${taskId}`;
+        currentWebSocket = new WebSocket(wsUrl);
+        currentTaskId = taskId;
+
+        currentWebSocket.onopen = function (event) {
+          console.log("WebSocket connected for task:", taskId);
+          reconnectAttempts = 0;
+          reconnectDelay = 1000;
+
+          // Stop polling fallback when WebSocket connects successfully
+          if (progressCheckInterval) {
+            clearInterval(progressCheckInterval);
+            progressCheckInterval = null;
+            console.log("Stopped polling fallback - WebSocket connected");
+          }
+
+          if (isReconnect) {
+            showNotification("Reconnected to task progress", "success");
+          } else {
+            showNotification("Connected to real-time progress updates", "info");
+          }
+
+          saveTaskState(taskId);
+        };
+
+        currentWebSocket.onmessage = function (event) {
+          try {
+            // Validate the event data
+            if (!event.data || typeof event.data !== "string") {
+              console.error("Invalid WebSocket message data:", event.data);
+              return;
+            }
+
+            const data = JSON.parse(event.data);
+            console.log("Received WebSocket message:", data);
+
+            handleWebSocketMessage(data);
+          } catch (error) {
+            console.error("Error parsing WebSocket message:", error);
+            console.error("Raw message data:", event.data);
+          }
+        };
+
+        currentWebSocket.onclose = function (event) {
+          console.log("WebSocket disconnected, code:", event.code);
+          currentWebSocket = null;
+
+          if (currentTaskId && reconnectAttempts < maxReconnectAttempts) {
+            setTimeout(() => {
+              reconnectAttempts++;
+              console.log(
+                `Attempting to reconnect (${reconnectAttempts}/${maxReconnectAttempts})`
+              );
+              connectWebSocket(currentTaskId, true);
+            }, reconnectDelay);
+
+            reconnectDelay = Math.min(reconnectDelay * 2, 30000);
+          } else if (reconnectAttempts >= maxReconnectAttempts) {
+            showNotification(
+              "Connection lost. Falling back to polling.",
+              "warning"
+            );
+            startPollingFallback(currentTaskId);
+          }
+        };
+
+        currentWebSocket.onerror = function (error) {
+          console.error("WebSocket error:", error);
+          if (reconnectAttempts === 0) {
+            showNotification(
+              "Connection error. Attempting to reconnect...",
+              "warning"
+            );
+          }
+        };
+      }
+
+      function handleWebSocketMessage(data) {
+        console.log("WebSocket message:", data);
+
+        try {
+          // Validate that data has required type property
+          if (!data || !data.type) {
+            console.error("Invalid WebSocket message format:", data);
+            return;
+          }
+
+          switch (data.type) {
+            case "initial_status":
+              updateProgressFromStatus(data);
+              // Show file list if files are available
+              if (data.files && data.files.length > 0) {
+                updateFileListFromWebSocket(data.files);
+              }
+              break;
+
+            case "status_update":
+              progressFill.style.width = `${data.progress}%`;
+              progressStatus.textContent = data.message;
+              progressTitle.textContent = `Processing Files (${data.files_processed}/${data.total_files})`;
+
+              // Update progress stats if progressStats element exists
+              if (progressStats) {
+                progressStats.textContent = `${data.files_processed}/${data.total_files} files completed`;
+              }
+
+              // Update file list if files data is available
+              if (data.files && data.files.length > 0) {
+                updateFileListFromWebSocket(data.files);
+              } else if (uploadedFilesList.length > 0) {
+                // If files array is empty but we have existing file list,
+                // update status based on overall progress
+                updateFileStatusBasedOnProgress(
+                  data.files_processed,
+                  data.total_files
+                );
+              }
+
+              // Update time remaining
+              if (data.estimated_time_remaining) {
+                progressTime.textContent = `${data.estimated_time_remaining} remaining`;
+              }
+              break;
+
+            case "files_extracted":
+              updateFileListFromWebSocket(data.files);
+              progressFill.style.width = `${data.progress}%`;
+              progressStatus.textContent = data.message;
+              progressTitle.textContent = `Processing Files (0/${data.total_files})`;
+              progressStats.textContent = `0/${data.total_files} files completed`;
+              break;
+
+            case "file_progress":
+              // Show "safe to close tab" message when processing actually starts
+              if (!processingStartedNotified) {
+                processingStartedNotified = true;
+                showNotification(
+                  "🚀 Processing has started! You can now safely close this tab - we'll continue working in the background.",
+                  "info",
+                  10000 // Show for 10 seconds
+                );
+
+                // Show visual indicator in progress section
+                const tabStatus = document.getElementById("tabStatus");
+                if (tabStatus) {
+                  tabStatus.style.display = "block";
+                }
+              }
+
+              if (data.file_index !== undefined && data.file_index >= 0) {
+                updateFileProgress(
+                  data.file_index,
+                  data.status || "processing",
+                  data.progress,
+                  data.error,
+                  data.message
+                );
+              }
+              if (data.overall_progress !== undefined) {
+                progressFill.style.width = `${data.overall_progress}%`;
+              }
+              if (data.message) {
+                progressStatus.textContent = data.message;
+              }
+              if (data.files_processed !== undefined) {
+                progressTitle.textContent = `Processing Files (${data.files_processed}/${data.total_files})`;
+                progressStats.textContent = `${data.files_processed}/${data.total_files} files completed`;
+              }
+              break;
+
+            case "file_completed":
+              if (data.file_index !== undefined && data.file_index >= 0) {
+                updateFileProgress(
+                  data.file_index,
+                  data.status || "completed",
+                  data.progress || 100,
+                  data.error,
+                  data.message
+                );
+              }
+              if (data.overall_progress !== undefined) {
+                progressFill.style.width = `${data.overall_progress}%`;
+              }
+              if (data.message) {
+                progressStatus.textContent = data.message;
+              }
+              if (
+                data.files_processed !== undefined &&
+                data.total_files !== undefined
+              ) {
+                progressTitle.textContent = `Processing Files (${data.files_processed}/${data.total_files})`;
+                progressStats.textContent = `${data.files_processed}/${data.total_files} files completed`;
+              }
+              if (data.estimated_time_remaining) {
+                progressTime.textContent = `${data.estimated_time_remaining} remaining`;
+              }
+              break;
+
+            case "file_failed":
+              if (data.file_index !== undefined && data.file_index >= 0) {
+                updateFileProgress(
+                  data.file_index,
+                  data.status || "failed",
+                  0,
+                  data.error,
+                  data.message
+                );
+              }
+              if (data.filename && data.error) {
+                showNotification(
+                  `Failed to process ${data.filename}: ${data.error}`,
+                  "error"
+                );
+              }
+              break;
+
+            case "completed":
+              handleProcessingComplete(data);
+              break;
+
+            case "error":
+              handleProcessingError(data);
+              break;
+
+            default:
+              console.warn("Unknown WebSocket message type:", data.type);
+              break;
+          }
+        } catch (error) {
+          console.error("Error handling WebSocket message:", error, data);
+        }
+      }
+
+      // ===== FILE PROGRESS FUNCTIONS =====
+      function updateFileListFromWebSocket(files) {
+        uploadedFilesList = files.map((file, index) => ({
+          id: `file-${index}`,
+          name: file.filename,
+          size_mb: file.size_mb,
+          status: file.status,
+          progress: file.progress || 0,
+        }));
+
+        // Make file list visible if files are being processed
+        if (files.length > 0) {
+          fileList.style.display = "block";
+        }
+
+        fileItems.innerHTML = "";
+        uploadedFilesList.forEach((file, index) => {
+          const fileItem = document.createElement("div");
+          fileItem.className = `file-item ${file.status}`;
+          fileItem.id = file.id;
+
+          // Format status text
+          let statusText =
+            file.status.charAt(0).toUpperCase() + file.status.slice(1);
+          if (file.status === "processing" && file.progress > 0) {
+            statusText = `Processing (${file.progress}%)`;
+          } else if (file.status === "completed") {
+            statusText = "✅ Completed";
+          } else if (file.status === "failed") {
+            statusText = "❌ Failed";
+          }
+
+          fileItem.innerHTML = `
+          <div class="file-item-header">
+            <div class="file-name">📄 ${file.name}</div>
+            <div class="file-details">
+              <div class="file-size">${file.size_mb.toFixed(2)} MB</div>
+              <div class="file-status ${file.status}">${statusText}</div>
+            </div>
+          </div>
+          <div class="file-item-progress">
+            <div class="file-progress-fill" style="width: ${
+              file.progress
+            }%"></div>
+          </div>
+        `;
+          fileItems.appendChild(fileItem);
+        });
+      }
+
+      function updateFileProgress(
+        fileIndex,
+        status,
+        progress,
+        errorMessage = null,
+        stepMessage = null
+      ) {
+        if (fileIndex < uploadedFilesList.length) {
+          const file = uploadedFilesList[fileIndex];
+
+          // Validate status parameter - enhanced error handling
+          if (!status || typeof status !== "string") {
+            console.warn(
+              "Invalid status provided to updateFileProgress:",
+              status,
+              "for file index:",
+              fileIndex
+            );
+            status = "processing"; // Default fallback status
+          }
+
+          // Validate that status is not empty string
+          if (status.trim() === "") {
+            console.warn("Empty status string provided, using 'processing'");
+            status = "processing";
+          }
+
+          file.status = status;
+          file.progress = progress || 0;
+
+          const fileElement = document.getElementById(file.id);
+          if (fileElement) {
+            fileElement.className = `file-item ${status}`;
+
+            const statusElement = fileElement.querySelector(".file-status");
+            if (statusElement) {
+              statusElement.className = `file-status ${status}`;
+
+              let statusText;
+              try {
+                statusText = status.charAt(0).toUpperCase() + status.slice(1);
+              } catch (e) {
+                console.error(
+                  "Error formatting status text:",
+                  e,
+                  "status:",
+                  status
+                );
+                statusText = "Unknown";
+              }
+
+              if (status === "processing" && progress > 0) {
+                statusText = `Processing (${progress}%)`;
+              } else if (status === "completed") {
+                statusText = "✅ Completed";
+              } else if (status === "failed" && errorMessage) {
+                statusText = "❌ Failed";
+                fileElement.title = errorMessage;
+              }
+              statusElement.textContent = statusText;
+
+              let detailsElement =
+                fileElement.querySelector(".file-item-details");
+              if (!detailsElement) {
+                detailsElement = document.createElement("div");
+                detailsElement.className = "file-item-details";
+                fileElement.appendChild(detailsElement);
+              }
+
+              if (stepMessage) {
+                if (status === "processing") {
+                  detailsElement.innerHTML = `<span class="processing-step">${stepMessage}</span>`;
+                } else {
+                  detailsElement.textContent = stepMessage;
+                }
+              } else if (status === "completed") {
+                detailsElement.textContent =
+                  "Processing completed successfully";
+              } else if (status === "failed") {
+                detailsElement.textContent =
+                  errorMessage || "Processing failed";
+              }
+
+              const progressBar = fileElement.querySelector(
+                ".file-progress-fill"
+              );
+              if (progressBar) {
+                progressBar.style.width = `${progress}%`;
+              }
+            }
+          }
+        }
+      }
+
+      function updateFileStatusBasedOnProgress(filesProcessed, totalFiles) {
+        // Update file status based on overall progress when detailed file info isn't available
+        for (let i = 0; i < uploadedFilesList.length && i < totalFiles; i++) {
+          const file = uploadedFilesList[i];
+          let status, progress;
+
+          if (i < filesProcessed) {
+            status = "completed";
+            progress = 100;
+          } else if (i === filesProcessed) {
+            status = "processing";
+            progress = 50; // Assume 50% for currently processing file
+          } else {
+            status = "pending";
+            progress = 0;
+          }
+
+          updateFileProgress(i, status, progress);
+        }
+      }
+
+      function handleProcessingComplete(data) {
+        progressFill.style.width = "100%";
+        progressTime.textContent = "Completed";
+
+        if (data.failed_files > 0) {
+          progressStatus.textContent = `⚠️ Processing completed with ${data.failed_files} errors`;
+          showNotification(
+            `Processing completed! ${data.completed_files} files processed, ${data.failed_files} failed.`,
+            "warning"
+          );
+        } else {
+          progressStatus.textContent = `✅ All ${data.completed_files} files processed successfully!`;
+          showNotification(
+            `All ${data.completed_files} files processed successfully!`,
+            "success"
+          );
+        }
+
+        // Clean up WebSocket connection
+        if (currentWebSocket) {
+          currentWebSocket.close();
+          currentWebSocket = null;
+        }
+
+        // Clean up polling fallback
+        if (progressCheckInterval) {
+          clearInterval(progressCheckInterval);
+          progressCheckInterval = null;
+          console.log("Stopped polling fallback - task completed");
+        }
+
+        // Clear current task ID
+        currentTaskId = null;
+
+        // Hide abort button when processing completes
+        if (abortBtn) {
+          abortBtn.style.display = "none";
+        }
+
+        setTimeout(() => {
+          progressContainer.style.display = "none";
+          fileList.style.display = "none";
+          loadAvailableFiles();
+          clearTaskFromStorage();
+        }, 4000);
+      }
+
+      function handleProcessingError(data) {
+        progressStatus.textContent = `❌ ${data.message}`;
+        progressTime.textContent = "Failed";
+        showNotification(data.message, "error");
+
+        // Clean up WebSocket connection
+        if (currentWebSocket) {
+          currentWebSocket.close();
+          currentWebSocket = null;
+        }
+
+        // Clean up polling fallback
+        if (progressCheckInterval) {
+          clearInterval(progressCheckInterval);
+          progressCheckInterval = null;
+          console.log("Stopped polling fallback - task failed");
+        }
+
+        // Clear current task ID
+        currentTaskId = null;
+
+        // Hide abort button when processing fails
+        if (abortBtn) {
+          abortBtn.style.display = "none";
+        }
+
+        setTimeout(() => {
+          progressContainer.style.display = "none";
+          fileList.style.display = "none";
+          clearTaskFromStorage();
+        }, 5000);
+      }
+
+      async function abortAllTasks() {
+        if (
+          !confirm(
+            "⚠️ Are you sure you want to abort all ongoing tasks?\n\nThis will:\n• Cancel all current processing tasks\n• Delete all uploaded files from aborted tasks\n• Remove all data from ChromaDB related to aborted uploads\n\nThis action cannot be undone."
+          )
+        ) {
+          return;
+        }
+
+        try {
+          abortBtn.disabled = true;
+          abortBtn.textContent = "🛑 Aborting...";
+
+          const response = await fetch(`${API_BASE_URL}/abort-all-tasks`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+          });
+
+          const result = await response.json();
+
+          if (
+            result.status === "success" ||
+            result.status === "partial_success"
+          ) {
+            let message = `✅ ${result.message}`;
+            if (result.status === "partial_success") {
+              message = `⚠️ ${result.message}`;
+            }
+            showNotification(
+              message,
+              result.status === "success" ? "success" : "warning",
+              8000
+            );
+
+            // Clean up local state
+            if (currentWebSocket) {
+              currentWebSocket.close();
+              currentWebSocket = null;
+            }
+
+            if (progressCheckInterval) {
+              clearInterval(progressCheckInterval);
+              progressCheckInterval = null;
+            }
+
+            // Reset UI state
+            currentTaskId = null;
+            uploadedFilesList = [];
+            fileItems.innerHTML = "";
+            processingStartedNotified = false;
+
+            // Hide progress and abort button
+            progressContainer.style.display = "none";
+            fileList.style.display = "none";
+            abortBtn.style.display = "none";
+
+            // Hide tab status indicator
+            const tabStatus = document.getElementById("tabStatus");
+            if (tabStatus) {
+              tabStatus.style.display = "none";
+            }
+
+            // Clear storage
+            clearTaskFromStorage();
+
+            // Refresh the file list to show current state (deleted files won't appear)
+            setTimeout(() => {
+              loadAvailableFiles();
+            }, 1000);
+          } else {
+            showNotification(
+              `❌ Failed to abort tasks: ${result.error || "Unknown error"}`,
+              "error"
+            );
+          }
+        } catch (error) {
+          console.error("Error aborting tasks:", error);
+          showNotification(
+            "❌ Error aborting tasks. Please try again.",
+            "error"
+          );
+        } finally {
+          abortBtn.disabled = false;
+          abortBtn.textContent = "🛑 Abort All Tasks";
+        }
+      }
+
+      function startPollingFallback(taskId) {
+        if (progressCheckInterval) {
+          clearInterval(progressCheckInterval);
+        }
+
+        progressCheckInterval = setInterval(async () => {
+          try {
+            const res = await fetch(
+              `${API_BASE_URL}/processing-status/${taskId}`
+            );
+            const status = await res.json();
+            updateProgressFromStatus(status);
+
+            if (status.status === "completed" || status.status === "failed") {
+              clearInterval(progressCheckInterval);
+              progressCheckInterval = null;
+            }
+          } catch (error) {
+            console.error("Polling error:", error);
+          }
+        }, 2000);
+      }
+
+      // ===== TASK RESTORATION FUNCTIONS =====
+      async function restoreTaskOnPageLoad() {
+        try {
+          const lastTaskId = loadFromLocalStorage(STORAGE_KEYS.CURRENT_TASK);
+          const lastActivity = loadFromLocalStorage(STORAGE_KEYS.LAST_ACTIVITY);
+          const savedFiles = loadFromLocalStorage(STORAGE_KEYS.UPLOADED_FILES);
+
+          if (!lastTaskId) {
+            console.log("No previous task found");
+            return;
+          }
+
+          const now = Date.now();
+          if (lastActivity && now - lastActivity > 24 * 60 * 60 * 1000) {
+            console.log("Last task too old, clearing storage");
+            clearTaskFromStorage();
+            return;
+          }
+
+          console.log("Attempting to restore task:", lastTaskId);
+
+          const response = await fetch(
+            `${API_BASE_URL}/processing-status/${lastTaskId}`
+          );
+          if (!response.ok) {
+            console.log("Task not found on server, clearing storage");
+            clearTaskFromStorage();
+            return;
+          }
+
+          const taskStatus = await response.json();
+
+          if (taskStatus.status === "processing") {
+            console.log("Reconnecting to active task:", lastTaskId);
+            showNotification("Reconnecting to previous task...", "info");
+
+            currentTaskId = lastTaskId;
+            if (savedFiles) {
+              uploadedFilesList = savedFiles;
+            }
+
+            progressContainer.style.display = "block";
+            updateProgressFromStatus(taskStatus);
+            connectWebSocket(lastTaskId, true);
+            // Note: polling fallback will be started automatically if WebSocket fails
+          } else if (
+            taskStatus.status === "completed" ||
+            taskStatus.status === "completed_with_errors"
+          ) {
+            console.log("Previous task completed:", lastTaskId);
+            showNotification("Previous task completed successfully", "success");
+
+            progressContainer.style.display = "block";
+            updateProgressFromStatus(taskStatus);
+
+            setTimeout(() => {
+              clearTaskFromStorage();
+              progressContainer.style.display = "none";
+            }, 5000);
+          } else {
+            console.log("Previous task failed or not found");
+            clearTaskFromStorage();
+          }
+        } catch (error) {
+          console.error("Error restoring task:", error);
+          clearTaskFromStorage();
+        }
+      }
+
+      async function checkForActiveTasksOnLoad() {
+        try {
+          const response = await fetch(`${API_BASE_URL}/active-tasks`);
+          if (!response.ok) return;
+
+          const data = await response.json();
+          if (data.active_tasks && data.active_tasks.length > 0) {
+            const activeTask = data.active_tasks[0];
+
+            if (!currentTaskId) {
+              console.log("Found active task on server:", activeTask.task_id);
+              showNotification("Found active task, reconnecting...", "info");
+
+              currentTaskId = activeTask.task_id;
+              progressContainer.style.display = "block";
+              updateProgressFromStatus(activeTask);
+              connectWebSocket(activeTask.task_id, true);
+              saveTaskState(activeTask.task_id);
+              // Note: polling fallback will be started automatically if WebSocket fails
+            }
+          }
+        } catch (error) {
+          console.error("Error checking for active tasks:", error);
+        }
+      }
+
+      function updateProgressFromStatus(status) {
+        if (!status) return;
+
+        progressFill.style.width = `${status.progress}%`;
+        progressStatus.textContent = status.message;
+        progressTitle.textContent = `Processing Files (${status.files_processed}/${status.total_files})`;
+        progressStats.textContent = `${status.files_processed}/${status.total_files} files completed`;
+
+        if (status.estimated_time_remaining) {
+          progressTime.textContent = `${status.estimated_time_remaining} remaining`;
+        } else if (status.status === "completed") {
+          progressTime.textContent = "Completed";
+        } else if (status.status === "failed") {
+          progressTime.textContent = "Failed";
+        }
+
+        if (status.files && status.files.length > 0) {
+          uploadedFilesList = status.files.map((file, index) => ({
+            id: `file-${index}`,
+            name: file.filename,
+            size_mb: file.size_mb,
+            status: file.status,
+            progress: file.progress || 0,
+          }));
+
+          updateFileListFromWebSocket(status.files);
+        }
+
+        if (currentTaskId) {
+          saveTaskState(currentTaskId, uploadedFilesList);
+        }
+      }
+
+      async function initializePage() {
+        isPageLoaded = true;
+        console.log("Page loaded, initializing...");
+
+        await restoreTaskOnPageLoad();
+
+        if (!currentTaskId) {
+          await checkForActiveTasksOnLoad();
+        }
+
+        await loadAvailableFiles();
+        console.log("Page initialization complete");
+      }
+
+      // ===== UTILITY FUNCTIONS =====
+      function getNotificationContainer() {
+        if (!notificationContainer) {
+          notificationContainer = document.createElement("div");
+          notificationContainer.className = "notification-container";
+          document.body.appendChild(notificationContainer);
+        }
+        return notificationContainer;
+      }
+
+      function showNotification(message, type = "info", duration = 5000) {
+        const container = getNotificationContainer();
+
+        const notification = document.createElement("div");
+        notification.className = `notification ${type}`;
+        notification.textContent = message;
+
+        // Add close button for manual dismissal
+        const closeBtn = document.createElement("span");
+        closeBtn.innerHTML = "×";
+        closeBtn.style.cssText = `
+          position: absolute;
+          top: 8px;
+          right: 12px;
+          cursor: pointer;
+          font-size: 18px;
+          line-height: 1;
+          opacity: 0.7;
+          transition: opacity 0.2s;
+        `;
+        closeBtn.addEventListener(
+          "mouseenter",
+          () => (closeBtn.style.opacity = "1")
+        );
+        closeBtn.addEventListener(
+          "mouseleave",
+          () => (closeBtn.style.opacity = "0.7")
+        );
+        closeBtn.addEventListener("click", () =>
+          removeNotification(notification)
+        );
+
+        notification.style.position = "relative";
+        notification.style.paddingRight = "40px";
+        notification.appendChild(closeBtn);
+
+        container.appendChild(notification);
+
+        // Trigger animation
+        setTimeout(() => notification.classList.add("show"), 100);
+
+        // Auto-remove after specified duration
+        const autoRemoveTimer = setTimeout(() => {
+          removeNotification(notification);
+        }, duration);
+
+        // Store timer reference for potential early removal
+        notification._autoRemoveTimer = autoRemoveTimer;
+      }
+
+      function removeNotification(notification) {
+        if (!notification || !notification.parentNode) return;
+
+        // Clear auto-remove timer if it exists
+        if (notification._autoRemoveTimer) {
+          clearTimeout(notification._autoRemoveTimer);
+          notification._autoRemoveTimer = null;
+        }
+
+        notification.classList.remove("show");
+        setTimeout(() => {
+          if (notification.parentNode) {
+            notification.parentNode.removeChild(notification);
+
+            // Clean up container if empty
+            const container = getNotificationContainer();
+            if (container.children.length === 0) {
+              container.remove();
+              notificationContainer = null;
+            }
+          }
+        }, 300);
+      }
+
+      function formatFileSize(bytes) {
+        if (bytes === 0) return "0 B";
+        const k = 1024;
+        const sizes = ["B", "KB", "MB", "GB"];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+      }
+
+      function cleanMarkdown(md) {
+        md = md.replace(/\r\n|\r/g, "\n");
+        md = md.trim();
+        md = md.replace(/([ \t]*\n){3,}/g, "\n\n");
+        return md.replace(/^(\s*\n)+|(\n\s*)+$/g, "");
+      }
+
+      // ===== FILE INPUT HANDLING =====
+      function setupFileInputHandlers() {
+        fileInputWrapper.addEventListener("dragover", (e) => {
+          e.preventDefault();
+          fileInputWrapper.classList.add("dragover");
+        });
+
+        fileInputWrapper.addEventListener("dragleave", (e) => {
+          e.preventDefault();
+          fileInputWrapper.classList.remove("dragover");
+        });
+
+        fileInputWrapper.addEventListener("drop", (e) => {
+          e.preventDefault();
+          fileInputWrapper.classList.remove("dragover");
+          const files = e.dataTransfer.files;
+          fileInput.files = files;
+          updateSelectedFiles();
+        });
+
+        fileInput.addEventListener("change", updateSelectedFiles);
+      }
+
+      function updateSelectedFiles() {
+        const files = fileInput.files;
+        selectedFilesDiv.innerHTML = "";
+
+        const MAX_FILE_SIZE = 100 * 1024 * 1024; // 50MB in bytes
+        let oversizedFiles = [];
+
+        if (files.length > 0) {
+          selectedFilesDiv.innerHTML =
+            '<div class="selected-files"><h4>Selected Files:</h4><div id="filePreviewList"></div></div>';
+          const previewList = document.getElementById("filePreviewList");
+
+          Array.from(files).forEach((file, index) => {
+            if (file.size > MAX_FILE_SIZE) {
+              oversizedFiles.push(file.name);
+              return;
+            }
+            const fileDiv = document.createElement("div");
+            fileDiv.className = "file-item-preview";
+
+            const fileIcon = file.name.toLowerCase().endsWith(".zip")
+              ? "📦"
+              : "📄";
+            const fileTypeText = file.name.toLowerCase().endsWith(".zip")
+              ? "ZIP Archive"
+              : "PDF Document";
+
+            fileDiv.innerHTML = `
+            <div class="file-preview-info">
+              <div class="file-preview-name">${fileIcon} ${file.name}</div>
+              <div class="file-preview-details">${formatFileSize(
+                file.size
+              )} • ${fileTypeText}</div>
+            </div>
+            <button class="file-remove-btn" onclick="removeFile(${index})" title="Remove file">×</button>
+          `;
+
+            previewList.appendChild(fileDiv);
+          });
+        }
+
+        if (oversizedFiles.length > 0) {
+          showNotification(
+            `The following files exceed the 100MB limit and were not added: ${oversizedFiles.join(
+              ", "
+            )}`,
+            "error"
+          );
+        }
+      }
+
+      function removeFile(index) {
+        const dt = new DataTransfer();
+        const files = fileInput.files;
+
+        for (let i = 0; i < files.length; i++) {
+          if (i !== index) {
+            dt.items.add(files[i]);
+          }
+        }
+
+        fileInput.files = dt.files;
+        updateSelectedFiles();
+      }
+
+      // ===== MULTISELECT FUNCTIONALITY =====
+      function initializeFileFilter() {
+        multiselectHeader.addEventListener("click", () => {
+          const isOpen = multiselectDropdown.style.display === "block";
+          multiselectDropdown.style.display = isOpen ? "none" : "block";
+          multiselectHeader.classList.toggle("active", !isOpen);
+        });
+
+        document.addEventListener("click", (e) => {
+          if (!document.getElementById("fileFilter").contains(e.target)) {
+            multiselectDropdown.style.display = "none";
+            multiselectHeader.classList.remove("active");
+          }
+        });
+      }
+
+      function updateFileFilter() {
+        multiselectDropdown.innerHTML = "";
+
+        const selectAllOption = document.createElement("div");
+        selectAllOption.className = "multiselect-option select-all";
+        selectAllOption.innerHTML = `
+        <input type="checkbox" id="selectAll" ${
+          selectedFiles.length === 0 ||
+          selectedFiles.length === availableFiles.length
+            ? "checked"
+            : ""
+        }>
+        <label for="selectAll">Select All Documents</label>
+      `;
+
+        selectAllOption
+          .querySelector("input")
+          .addEventListener("change", (e) => {
+            if (e.target.checked) {
+              selectedFiles = [...availableFiles.map((f) => f.filename)];
+            } else {
+              selectedFiles = [];
+            }
+            updateFileFilterDisplay();
+            updateFileFilterCheckboxes();
+          });
+
+        multiselectDropdown.appendChild(selectAllOption);
+
+        availableFiles.forEach((file) => {
+          const option = document.createElement("div");
+          option.className = "multiselect-option";
+          option.innerHTML = `
+          <input type="checkbox" id="file_${file.filename}" ${
+            selectedFiles.includes(file.filename) || selectedFiles.length === 0
+              ? "checked"
+              : ""
+          }>
+          <label for="file_${file.filename}">${
+            file.display_name
+          } <span style="color: var(--light-gray);">(${
+            file.size_mb
+          } MB)</span></label>
+        `;
+
+          option.querySelector("input").addEventListener("change", (e) => {
+            if (e.target.checked) {
+              if (!selectedFiles.includes(file.filename)) {
+                selectedFiles.push(file.filename);
+              }
+            } else {
+              selectedFiles = selectedFiles.filter((f) => f !== file.filename);
+            }
+            updateFileFilterDisplay();
+            updateSelectAllCheckbox();
+          });
+
+          multiselectDropdown.appendChild(option);
+        });
+      }
+
+      function updateFileFilterDisplay() {
+        if (
+          selectedFiles.length === 0 ||
+          selectedFiles.length === availableFiles.length
+        ) {
+          selectedFilesText.textContent = "All documents selected";
+        } else {
+          selectedFilesText.textContent = `${selectedFiles.length} of ${availableFiles.length} documents selected`;
+        }
+      }
+
+      function updateFileFilterCheckboxes() {
+        availableFiles.forEach((file) => {
+          const checkbox = document.getElementById(`file_${file.filename}`);
+          if (checkbox) {
+            checkbox.checked =
+              selectedFiles.includes(file.filename) ||
+              selectedFiles.length === 0;
+          }
+        });
+      }
+
+      function updateSelectAllCheckbox() {
+        const selectAllCheckbox = document.getElementById("selectAll");
+        if (selectAllCheckbox) {
+          selectAllCheckbox.checked =
+            selectedFiles.length === availableFiles.length;
+        }
+      }
+
+      // ===== BOOKS AND DOCUMENTS =====
+      async function loadAvailableFiles() {
+        try {
+          const res = await fetch(`${API_BASE_URL}/all-books`);
+          const data = await res.json();
+          const booksList = document.getElementById("booksList");
+          booksList.innerHTML = "";
+
+          if (data.books && data.books.length > 0) {
+            availableFiles = data.books;
+
+            data.books.forEach((book) => {
+              const card = document.createElement("div");
+              card.className = "book-card fade-in";
+              card.innerHTML = `
+              <div class="book-title">${book.display_name}</div>
+              <div class="book-metadata">
+                <span class="badge badge-score">${book.size_mb} MB</span>
+                <span class="badge badge-page">PDF Document</span>
+              </div>
+              <button class="delete-btn" onclick="deleteBook(event, '${book.filename}')" title="Delete document">&times;</button>
+            `;
+
+              card.onclick = (e) => {
+                if (!e.target.classList.contains("delete-btn")) {
+                  viewPDF(book.url);
+                }
+              };
+
+              booksList.appendChild(card);
+            });
+
+            // Clean up selectedFiles to remove any files that no longer exist
+            const availableFilenames = availableFiles.map((f) => f.filename);
+            selectedFiles = selectedFiles.filter((filename) =>
+              availableFilenames.includes(filename)
+            );
+
+            // If no files are selected or all selected files were deleted, select all available files
+            if (selectedFiles.length === 0) {
+              selectedFiles = availableFiles.map((f) => f.filename);
+            }
+
+            updateFileFilter();
+            updateFileFilterDisplay();
+          } else {
+            booksList.innerHTML =
+              '<div class="no-results">📚 No documents uploaded yet. Upload some PDFs to get started!</div>';
+            availableFiles = [];
+            selectedFiles = [];
+            updateFileFilter();
+            updateFileFilterDisplay();
+          }
+        } catch (error) {
+          console.error("Error loading books:", error);
+          const booksList = document.getElementById("booksList");
+          booksList.innerHTML =
+            '<div class="no-results">❌ Error loading documents. Please check your connection.</div>';
+          showNotification("Error loading documents", "error");
+        }
+      }
+
+      async function deleteBook(event, filename) {
+        event.stopPropagation();
+        if (confirm(`Are you sure you want to delete '${filename}'?`)) {
+          try {
+            await fetch(
+              `${API_BASE_URL}/delete-book?filename=${encodeURIComponent(
+                filename
+              )}`,
+              { method: "DELETE" }
+            );
+
+            // Remove the deleted file from selectedFiles array
+            selectedFiles = selectedFiles.filter((f) => f !== filename);
+
+            // Reload available files and update the filter
+            await loadAvailableFiles();
+
+            showNotification("Document deleted successfully", "success");
+
+            if (pdfViewer.src.includes(filename)) {
+              const pdfViewerSection =
+                document.getElementById("pdfViewerSection");
+              pdfViewerSection.style.display = "none";
+            }
+          } catch (error) {
+            console.error("Error deleting book:", error);
+            showNotification("Error deleting document", "error");
+          }
+        }
+      }
+
+      async function resetDatabase() {
+        if (
+          confirm(
+            "⚠️ Are you sure you want to reset the entire database?\n\n" +
+              "This will:\n" +
+              "• Delete ALL uploaded documents\n" +
+              "• Clear ALL ChromaDB embeddings\n" +
+              "• Remove ALL processed data\n\n" +
+              "This action cannot be undone!"
+          )
+        ) {
+          try {
+            showNotification("Resetting database...", "info");
+
+            const response = await fetch(`${API_BASE_URL}/reset-database`, {
+              method: "POST",
+            });
+
+            const result = await response.json();
+
+            if (response.ok && !result.error) {
+              showNotification(
+                `Database reset successfully! Deleted ${result.files_deleted} files.`,
+                "success"
+              );
+
+              // Clear local state
+              availableFiles = [];
+              selectedFiles = [];
+
+              // Close PDF viewer if open
+              closePDFViewer();
+
+              // Hide answer section
+              answerSection.style.display = "none";
+
+              // Reload the books list
+              await loadAvailableFiles();
+            } else {
+              showNotification(
+                result.error || "Failed to reset database",
+                "error"
+              );
+            }
+          } catch (error) {
+            console.error("Error resetting database:", error);
+            showNotification("Error resetting database", "error");
+          }
+        }
+      }
+
+      function jumpToPage() {
+        const pageInput = document.getElementById("pageInput");
+        const pageNumber = parseInt(pageInput.value);
+
+        if (pageNumber && pageNumber > 0) {
+          // Check if we have a current PDF URL stored
+          if (currentPdfUrl) {
+            // Close the current PDF viewer first
+            pdfViewer.src = "";
+
+            // Small delay to ensure the PDF is properly closed before reopening
+            setTimeout(() => {
+              viewPDF(currentPdfUrl, pageNumber);
+            }, 100);
+          } else {
+            showNotification("No PDF is currently open", "error");
+          }
+        } else {
+          showNotification("Please enter a valid page number", "error");
+        }
+      }
+
+      function closePDFViewer() {
+        const pdfViewerSection = document.getElementById("pdfViewerSection");
+        pdfViewerSection.style.display = "none";
+        pdfViewer.src = "";
+        document.getElementById("pageInput").value = "";
+        currentPdfUrl = null;
+        currentPageNumber = null;
+      }
+
+      function viewPDF(pdfUrl, pageNumber = null) {
+        if (!pdfUrl) {
+          showNotification("PDF URL not available", "error");
+          return;
+        }
+
+        currentPdfUrl = pdfUrl;
+        currentPageNumber = pageNumber;
+
+        const pdfViewerSection = document.getElementById("pdfViewerSection");
+        pdfViewerSection.style.display = "block";
+
+        // Function to scroll to PDF viewer with better positioning
+        const scrollToPDFViewer = () => {
+          // Use scrollIntoView with better options for proper centering
+          pdfViewerSection.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+            inline: "nearest",
+          });
+
+          // Additional scroll adjustment to ensure proper visibility
+          setTimeout(() => {
+            const rect = pdfViewerSection.getBoundingClientRect();
+            const windowHeight = window.innerHeight;
+
+            // If the PDF viewer is not fully visible, scroll a bit more
+            if (rect.top < 0 || rect.bottom > windowHeight) {
+              const targetY = pdfViewerSection.offsetTop - 20; // 20px margin from top
+              window.scrollTo({
+                top: targetY,
+                behavior: "smooth",
+              });
+            }
+          }, 300);
+        };
+
+        // If we're navigating to a specific page and the PDF is already loaded,
+        // close it first to ensure proper page navigation
+        if (pageNumber && pdfViewer.src) {
+          pdfViewer.src = "";
+
+          // Small delay to ensure the PDF is properly closed before reopening
+          setTimeout(() => {
+            let fullUrl = pdfUrl;
+            if (pageNumber) {
+              fullUrl += `#page=${pageNumber}`;
+              document.getElementById("pageInput").value = pageNumber;
+            }
+            pdfViewer.src = fullUrl;
+            scrollToPDFViewer();
+          }, 100);
+        } else {
+          // For initial load or when no specific page is requested
+          let fullUrl = pdfUrl;
+          if (pageNumber) {
+            fullUrl += `#page=${pageNumber}`;
+            document.getElementById("pageInput").value = pageNumber;
+          }
+          pdfViewer.src = fullUrl;
+          scrollToPDFViewer();
+        }
+      }
+
+      function openPDFReference(pdfUrl, pageNumber) {
+        if (pdfUrl) {
+          viewPDF(pdfUrl, pageNumber);
+        } else {
+          showNotification("PDF not available for this reference", "error");
+        }
+      }
+
+      function initializeEnhancedFileList(files) {
+        uploadedFilesList = files.map((file, index) => ({
+          id: `file-${index}`,
+          name: file.filename,
+          size_mb: file.size_mb,
+          status: file.status,
+          progress: file.progress || 0,
+        }));
+
+        fileItems.innerHTML = "";
+        uploadedFilesList.forEach((file, index) => {
+          const fileItem = document.createElement("div");
+          fileItem.className = `file-item ${file.status}`;
+          fileItem.id = file.id;
+
+          fileItem.innerHTML = `
+          <div class="file-item-header">
+            <div class="file-name">📄 ${file.name}</div>
+            <div class="file-details">
+              <div class="file-size">${file.size_mb.toFixed(2)} MB</div>
+              <div class="file-status ${file.status}">${
+            file.status.charAt(0).toUpperCase() + file.status.slice(1)
+          }</div>
+            </div>
+          </div>
+          <div class="file-item-progress">
+            <div class="file-progress-fill" style="width: ${
+              file.progress
+            }%"></div>
+          </div>
+        `;
+          fileItems.appendChild(fileItem);
+        });
+      }
+
+      // ===== FORM HANDLERS =====
+      function setupFormHandlers() {
+        // Setup abort button event listener
+        abortBtn.addEventListener("click", abortAllTasks);
+
+        uploadForm.addEventListener("submit", async (e) => {
+          e.preventDefault();
+          if (!fileInput.files.length) {
+            showNotification("Please select files to upload", "error");
+            return;
+          }
+
+          // Clean up any existing WebSocket connection before starting new upload
+          if (currentWebSocket) {
+            currentWebSocket.close();
+            currentWebSocket = null;
+          }
+
+          // Reset processing state
+          if (progressCheckInterval) {
+            clearInterval(progressCheckInterval);
+            progressCheckInterval = null;
+          }
+
+          // Reset file list and flags
+          uploadedFilesList = [];
+          fileItems.innerHTML = "";
+          processingStartedNotified = false; // Reset the notification flag for new uploads
+
+          // Hide tab status indicator
+          const tabStatus = document.getElementById("tabStatus");
+          if (tabStatus) {
+            tabStatus.style.display = "none";
+          }
+
+          // Clear previous task from storage
+          clearTaskFromStorage();
+
+          const formData = new FormData();
+          Array.from(fileInput.files).forEach((file) => {
+            formData.append("files", file);
+          });
+
+          const submitBtn = document.getElementById("uploadBtn");
+          const originalText = submitBtn.textContent;
+          submitBtn.textContent = "📤 Uploading...";
+          submitBtn.disabled = true;
+
+          // Show upload message asking user to keep tab open
+          showNotification(
+            "📤 Uploading files... Please keep this tab open until upload is complete.",
+            "info",
+            8000 // Show for 8 seconds
+          );
+
+          try {
+            const res = await fetch(`${API_BASE_URL}/upload-files`, {
+              method: "POST",
+              body: formData,
+            });
+
+            const data = await res.json();
+
+            if (data.task_id) {
+              showNotification(
+                `✅ Upload complete! ${data.files_count} file(s) received. Processing will continue in the background.`,
+                "success"
+              );
+
+              initializeEnhancedFileList(data.files);
+
+              progressContainer.style.display = "block";
+              fileList.style.display = "block";
+              progressFill.style.width = "0%";
+              progressStatus.textContent =
+                "Files uploaded successfully! Initializing processing...";
+              progressTitle.textContent = `Processing Files (0/${data.files_count})`;
+              progressStats.textContent = `Estimated time: ${data.estimated_completion_time}`;
+              processingStartTime = Date.now();
+
+              currentTaskId = data.task_id;
+
+              // Show abort button when processing starts
+              if (abortBtn) {
+                abortBtn.style.display = "inline-block";
+              }
+
+              connectWebSocket(data.task_id);
+
+              uploadForm.reset();
+              updateSelectedFiles();
+            } else {
+              showNotification(data.message || "Upload failed", "error");
+            }
+          } catch (error) {
+            console.error("Error uploading:", error);
+            showNotification("Error uploading files", "error");
+          } finally {
+            submitBtn.textContent = originalText;
+            submitBtn.disabled = false;
+          }
+        });
+
+        queryForm.addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const query = document.getElementById("questionInput").value;
+          const submitBtn = document.getElementById("queryBtn");
+          const originalText = submitBtn.textContent;
+          submitBtn.textContent = "🔍 Searching...";
+          submitBtn.disabled = true;
+
+          answerSection.style.display = "block";
+          answerSection.classList.add("fade-in");
+          answerText.innerHTML =
+            '<div class="loading pulse">Generating answer...</div>';
+          referencesContainer.innerHTML =
+            '<div class="loading pulse">🔍 Finding references...</div>';
+
+          try {
+            const requestBody = { query, top_k: 5 };
+
+            if (
+              selectedFiles.length > 0 &&
+              selectedFiles.length < availableFiles.length
+            ) {
+              requestBody.selected_files = selectedFiles;
+            }
+
+            const res = await fetch(`${API_BASE_URL}/query`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(requestBody),
+            });
+
+            const data = await res.json();
+
+            if (data.answer && data.references) {
+              answerText.innerHTML = marked.parse(cleanMarkdown(data.answer));
+              referencesContainer.innerHTML = "";
+
+              if (data.references.length > 0) {
+                data.references.forEach((ref, index) => {
+                  const refDiv = document.createElement("div");
+                  refDiv.className = "reference-item fade-in";
+                  refDiv.innerHTML = `
+                  <div class="reference-header">
+                    <span class="reference-source">📄 Reference ${index + 1}: ${
+                    ref.source
+                  }</span>
+                    <div class="reference-badges">
+                      <span class="badge badge-score">Score: ${ref.score.toFixed(
+                        3
+                      )}</span>
+                      ${
+                        ref.page_number
+                          ? `<span class="badge badge-page">Page: ${ref.page_number}</span>`
+                          : ""
+                      }
+                    </div>
+                  </div>
+                  <div class="reference-text">${ref.text}</div>
+                `;
+
+                  refDiv.onclick = () =>
+                    openPDFReference(ref.pdf_url, ref.page_number);
+                  referencesContainer.appendChild(refDiv);
+                });
+              } else {
+                referencesContainer.innerHTML =
+                  '<div class="no-results">No references found for the selected files.</div>';
+              }
+            } else {
+              answerText.innerHTML =
+                '<div class="no-results">🤷‍♂️ No relevant information found for your query.</div>';
+              referencesContainer.innerHTML =
+                '<div class="no-results">No references available.</div>';
+            }
+          } catch (error) {
+            console.error("Error querying:", error);
+            answerText.innerHTML =
+              '<div class="no-results">❌ Error processing your query. Please try again.</div>';
+            referencesContainer.innerHTML =
+              '<div class="no-results">Error loading references.</div>';
+            showNotification("Error processing query", "error");
+          } finally {
+            submitBtn.textContent = originalText;
+            submitBtn.disabled = false;
+          }
+        });
+
+        document
+          .getElementById("pageInput")
+          .addEventListener("keypress", (e) => {
+            if (e.key === "Enter") {
+              jumpToPage();
+            }
+          });
+      }
+
+      // ===== INITIALIZATION =====
+      document.addEventListener("DOMContentLoaded", async () => {
+        setupFileInputHandlers();
+        setupFormHandlers();
+        initializeFileFilter();
+        await initializePage();
+
+        // Add beforeunload handler to warn users during uploads
+        window.addEventListener("beforeunload", (e) => {
+          // Only warn if upload is in progress but processing hasn't started
+          const uploadBtn = document.getElementById("uploadBtn");
+          if (
+            uploadBtn &&
+            uploadBtn.disabled &&
+            uploadBtn.textContent.includes("Uploading") &&
+            !processingStartedNotified
+          ) {
+            e.preventDefault();
+            e.returnValue =
+              "Files are still uploading. Closing now may interrupt the upload. Are you sure?";
+            return e.returnValue;
+          }
+        });
+      });
+    </script>
+  </body>
+</html>

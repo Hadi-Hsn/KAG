@@ -1,0 +1,15 @@
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+rag_db/
+data/highlighted_*
+main_original.py
+.DS_Store
+Thumbs.db

@@ -1,0 +1,54 @@
+# Virtual environment
+
+venv/
+env/
+.venv/
+
+# Python cache
+
+**pycache**/
+_.pyc
+_.pyo
+\*.pyd
+.Python
+
+# IDE files
+
+.vscode/
+.idea/
+_.swp
+_.swo
+
+# Version control
+
+.git/
+.gitignore
+
+# Local data directories (will be handled by Docker volumes)
+
+data/
+rag_db/
+chroma_data/
+
+# Environment files (will be passed via docker-compose)
+
+.env
+
+# Documentation and development files
+
+\*.md
+docs/
+
+# OS files
+
+.DS_Store
+Thumbs.db
+
+# Logs
+
+\*.log
+
+# Temporary files
+
+_.tmp
+_.temp
