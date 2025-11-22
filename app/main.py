@@ -46,6 +46,34 @@ async def startup_event():
 # Mount the 'data' directory as a static files directory
 app.mount("/static", StaticFiles(directory=DATA_DIR), name="static")
 
+# Get the project root directory (parent of app directory)
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+# Serve HTML files
+@app.get("/")
+async def read_root():
+    """Serve the main index.html file"""
+    index_path = os.path.join(PROJECT_ROOT, "index.html")
+    if os.path.exists(index_path):
+        return FileResponse(index_path)
+    return {"error": f"index.html not found at {index_path}"}
+
+@app.get("/pdf-viewer.html")
+async def read_pdf_viewer():
+    """Serve the pdf-viewer.html file"""
+    viewer_path = os.path.join(PROJECT_ROOT, "pdf-viewer.html")
+    if os.path.exists(viewer_path):
+        return FileResponse(viewer_path)
+    return {"error": f"pdf-viewer.html not found at {viewer_path}"}
+
+@app.get("/index.html")
+async def read_index():
+    """Serve the index.html file"""
+    index_path = os.path.join(PROJECT_ROOT, "index.html")
+    if os.path.exists(index_path):
+        return FileResponse(index_path)
+    return {"error": f"index.html not found at {index_path}"}
+
 # CORS (for Postman or any client)
 app.add_middleware(
     CORSMiddleware,

@@ -22,6 +22,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application files
 COPY app/ ./app/
 COPY index.html .
+COPY pdf-viewer.html .
 
 # Create directories for data storage
 RUN mkdir -p /app/data

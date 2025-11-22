@@ -1294,7 +1294,6 @@
                     background: #dc3545;
                     border: 1px solid #dc3545;
                   "
-                  title="Abort all processing tasks"
                 >
                   🛑 Abort All Tasks
                 </button>
@@ -1404,7 +1403,6 @@
               class="btn btn-danger"
               onclick="resetDatabase()"
               style="padding: 8px 16px; font-size: 0.9rem"
-              title="Reset entire database and delete all documents"
             >
               🗑️ Reset Database
             </button>
@@ -1466,6 +1464,7 @@
       // ===== GLOBAL VARIABLES =====
       let currentPdfUrl = null;
       let currentPageNumber = null;
+      let currentChunkText = null;
       let availableFiles = [];
       let selectedFiles = [];
       let currentTaskId = null;
@@ -2320,6 +2319,7 @@
       }
 
       function showNotification(message, type = "info", duration = 5000) {
+        return;
         const container = getNotificationContainer();
 
         const notification = document.createElement("div");
@@ -2465,7 +2465,7 @@
                 file.size
               )} • ${fileTypeText}</div>
             </div>
-            <button class="file-remove-btn" onclick="removeFile(${index})" title="Remove file">×</button>
+            <button class="file-remove-btn" onclick="removeFile(${index})">×</button>
           `;
 
             previewList.appendChild(fileDiv);
@@ -2623,7 +2623,7 @@
                 <span class="badge badge-score">${book.size_mb} MB</span>
                 <span class="badge badge-page">PDF Document</span>
               </div>
-              <button class="delete-btn" onclick="deleteBook(event, '${book.filename}')" title="Delete document">&times;</button>
+              <button class="delete-btn" onclick="deleteBook(event, '${book.filename}')">&times;</button>
             `;
 
               card.onclick = (e) => {
@@ -2776,9 +2776,10 @@
         document.getElementById("pageInput").value = "";
         currentPdfUrl = null;
         currentPageNumber = null;
+        currentChunkText = null;
       }
 
-      function viewPDF(pdfUrl, pageNumber = null) {
+      function viewPDF(pdfUrl, pageNumber = null, chunkText = null) {
         if (!pdfUrl) {
           showNotification("PDF URL not available", "error");
           return;
@@ -2786,6 +2787,7 @@
 
         currentPdfUrl = pdfUrl;
         currentPageNumber = pageNumber;
+        currentChunkText = chunkText;
 
         const pdfViewerSection = document.getElementById("pdfViewerSection");
         pdfViewerSection.style.display = "block";
@@ -2815,38 +2817,49 @@
           }, 300);
         };
 
-        // If we're navigating to a specific page and the PDF is already loaded,
-        // close it first to ensure proper page navigation
-        if (pageNumber && pdfViewer.src) {
-          pdfViewer.src = "";
+        // Build URL for the new PDF viewer
+        const encodedPdfUrl = encodeURIComponent(pdfUrl);
+        let viewerUrl = `pdf-viewer.html?file=${encodedPdfUrl}`;
+        if (pageNumber) {
+          viewerUrl += `&page=${pageNumber}`;
+          document.getElementById("pageInput").value = pageNumber;
+        }
 
-          // Small delay to ensure the PDF is properly closed before reopening
-          setTimeout(() => {
-            let fullUrl = pdfUrl;
-            if (pageNumber) {
-              fullUrl += `#page=${pageNumber}`;
-              document.getElementById("pageInput").value = pageNumber;
-            }
-            pdfViewer.src = fullUrl;
-            scrollToPDFViewer();
-          }, 100);
-        } else {
-          // For initial load or when no specific page is requested
-          let fullUrl = pdfUrl;
-          if (pageNumber) {
-            fullUrl += `#page=${pageNumber}`;
-            document.getElementById("pageInput").value = pageNumber;
+        // Load the PDF viewer
+        pdfViewer.src = viewerUrl;
+
+        // Wait for iframe to load, then send highlight message if chunk text exists
+        pdfViewer.onload = () => {
+          if (chunkText) {
+            // Wait a bit for PDF.js to fully render before highlighting
+            setTimeout(() => {
+              highlightTextInPDF(chunkText);
+            }, 1500);
           }
-          pdfViewer.src = fullUrl;
-          scrollToPDFViewer();
+        };
+
+        scrollToPDFViewer();
+      }
+
+      function openPDFReference(pdfUrl, pageNumber, chunkText = null) {
+        if (pdfUrl) {
+          viewPDF(pdfUrl, pageNumber, chunkText);
+        } else {
+          showNotification("PDF not available for this reference", "error");
         }
       }
 
-      function openPDFReference(pdfUrl, pageNumber) {
-        if (pdfUrl) {
-          viewPDF(pdfUrl, pageNumber);
-        } else {
-          showNotification("PDF not available for this reference", "error");
+      // Helper function to send highlight message to PDF viewer iframe
+      function highlightTextInPDF(text) {
+        const iframe = document.getElementById("pdfViewer");
+        if (iframe && iframe.contentWindow) {
+          iframe.contentWindow.postMessage(
+            {
+              type: "HIGHLIGHT_TEXT",
+              data: { text: text },
+            },
+            "*"
+          );
         }
       }
 
@@ -3049,7 +3062,7 @@
                 `;
 
                   refDiv.onclick = () =>
-                    openPDFReference(ref.pdf_url, ref.page_number);
+                    openPDFReference(ref.pdf_url, ref.page_number, ref.text);
                   referencesContainer.appendChild(refDiv);
                 });
               } else {
